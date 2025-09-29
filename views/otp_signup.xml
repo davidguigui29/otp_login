@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+        <template inherit_id="auth_signup.signup" id="custom_otp_signup">
+            <xpath expr="//form[@class='oe_signup_form']" position="replace">
+
+                <!-- Step 1: Signup -->
+                <form class="oe_signup_form" role="form" t-attf-action="/web/signup/otp"
+                    method="post" t-if="not otp and not otp_no and not message">
+
+                    <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()" />
+
+                    <div class="mb-3">
+                        <label for="login">Email</label>
+                        <input type="email" name="login" id="login" class="form-control"
+                            required="required" t-att-value="login or ''" />
+                    </div>
+
+                    <div class="mb-3 field-name">
+                        <label for="name" class="form-label">Name</label>
+                        <input type="text" name="name" id="name" class="form-control" placeholder="John Doe" required="required"/>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="password">Password</label>
+                        <input type="password" name="password" id="password"
+                            class="form-control" required="required"
+                            t-att-value="password or ''" />
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="confirm_password">Confirm Password</label>
+                        <input type="password" name="confirm_password" id="confirm_password"
+                            class="form-control" required="required"
+                            t-att-value="confirm_password or ''" />
+                    </div>
+
+
+                    <div class="form-check mb-3">
+                        <input type="checkbox" class="form-check-input show-password-checkbox" />
+                        <label class="form-check-label">Show password</label>
+                    </div>
+
+                    <p class="alert alert-danger" t-if="error">
+                        <t t-out="error" />
+                    </p>
+
+                    <div class="text-center pt-3">
+                        <button style="width:100%" type="submit" class="btn btn-primary">
+                            Send OTP
+                        </button>
+                    </div>
+                </form>
+
+                <!-- Step 2: Verify OTP -->
+                <form t-if="otp" id="form_signup_otp" class="oe_login_form" role="form"
+                    t-attf-action="/web/signup/otp/verify" method="post">
+
+                    <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()" />
+
+                    <div class="form-group">
+                        <label for="otp">OTP</label>
+                        <input type="text" name="otp" id="otp" class="form-control"
+                            required="required" />
+
+                        <!-- hidden user fields -->
+                        <input type="hidden" name="login" t-att-value="login" />
+                        <input type="hidden" name="name" id="name" t-att-value="name" />
+                        <input type="hidden" name="password" t-att-value="password" />
+                        <input type="hidden" name="confirm_password" t-att-value="confirm_password" />
+                    </div>
+
+                    <p t-if="otp_error" class="alert alert-danger mt-2" role="alert">
+                        The OTP you entered is invalid. Please try again.
+                    </p>
+
+                    <input type="hidden" name="login" t-att-value="login" />
+                    <input type="hidden" name="name" id="name" t-att-value="name" />
+                    <input type="hidden" name="password" t-att-value="password" />
+                    <input type="hidden" name="confirm_password" t-att-value="confirm_password" />
+
+                    <div class="text-center mt-2">
+                        <button id="resend_signup_otp_btn" type="button" class="btn btn-link">
+                            Resend OTP (<span id="signup_countdown">0</span>s)
+                        </button>
+                    </div>
+
+                    <div class="text-center pt-3">
+                        <button style="width:100%" type="submit" class="btn btn-primary">Sign Up</button>
+                    </div>
+                </form>
+
+
+
+            </xpath>
+        </template>
+    </data>
+</odoo>
