@@ -124,7 +124,7 @@ class OtpLoginHome(Home):
                 'email_to': email,
                 'body_html': mail_body,
             })
-            # mail.send()
+            mail.send()
 
             # Save OTP in your verification model
             request.env['otp.verification'].sudo().create(vals)
