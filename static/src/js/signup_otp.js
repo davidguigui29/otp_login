@@ -10,6 +10,14 @@ whenReady(() => {
     if (resendBtn) {
         resendBtn.addEventListener("click", async function () {
             const emailInput = document.querySelector("#signup_email") || document.querySelector("input[name='login']");
+            const nameInput = document.querySelector("input[name='name']");
+            // console.log(nameInput)
+
+            if (!nameInput || !nameInput.value) {
+                alert("Name missing, please go back and try again")
+                return;
+            }
+
             if (!emailInput || !emailInput.value) {
                 alert("Email missing, please go back and try again.");
                 return;
@@ -26,7 +34,7 @@ whenReady(() => {
                 const response = await fetch("/web/signup/otp/resend", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ login: emailInput.value }),
+                    body: JSON.stringify({ login: emailInput.value, name: nameInput.value }),
                 });
 
                 const raw = await response.json();

@@ -11,16 +11,22 @@ _logger = logging.getLogger(__name__)
 
 class OtpLoginHome(Home):
 
-    def _build_otp_email(self, email, name, otp_code):
+    def _build_login_otp_email(self, email, name, otp_code):
         """Return subject, body_html for Login OTP email."""
         company = request.env.company
         email_from = company.email or "noreply@example.com"
         company_name = company.name or "Your Company"
-        company_logo = f"/web/image/res.company/{company.id}/logo" if company.logo else ""
+        company_logo = ""
+        if company.logo:
+            base_url = request.env["ir.config_parameter"].sudo().get_param("web.base.url")
+            company_logo = f"{base_url}/web/image/res.company/{company.id}/logo"
         company_website = company.website or "#"
         company_phone = company.phone or "N/A"
 
         subject = _(f"[{company_name}] Verify Your Login - OTP Required")
+        # {"<img src='%s' alt='%s' height='50' style='margin-bottom:10px;'>" % (company_logo, company_name) if company_logo else ""}
+
+
 
         body_html = f"""
         <html>
@@ -77,9 +83,9 @@ class OtpLoginHome(Home):
         """
         return subject, email_from, body_html
 
-    def _send_otp_email(self, email, name, otp_code):
+    def _send_login_otp_email(self, email, name, otp_code):
         """Build and send OTP email for login verification."""
-        subject, email_from, body_html = self._build_otp_email(email, name, otp_code)
+        subject, email_from, body_html = self._build_login_otp_email(email, name, otp_code)
         mail = request.env['mail.mail'].sudo().create({
             'subject': subject,
             'email_from': email_from,
@@ -134,7 +140,7 @@ class OtpLoginHome(Home):
             }
             
             # Send mail
-            self._send_otp_email(email, user_id.name, OTP)
+            self._send_login_otp_email(email, user_id.name, OTP)
 
             # Save OTP in your verification model
             request.env['otp.verification'].sudo().create(vals)
@@ -221,7 +227,7 @@ class OtpLoginHome(Home):
         })
 
         # Send mail
-        self._send_otp_email(email, user_id.name, OTP)
+        self._send_login_otp_email(email, user_id.name, OTP)
 
         return {"status": "success", "message": "OTP resent successfully"}
 

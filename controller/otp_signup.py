@@ -25,7 +25,11 @@ class OtpSignupHome(AuthSignupHome):
         company = request.env.company
         email_from = company.email or "noreply@example.com"
         company_name = company.name or "Your Company"
-        company_logo = f"/web/image/res.company/{company.id}/logo" if company.logo else ""
+        # company_logo = f"/web/image/res.company/{company.id}/logo" if company.logo else ""
+        company_logo = ""
+        if company.logo:
+            base_url = request.env["ir.config_parameter"].sudo().get_param("web.base.url")
+            company_logo = f"{base_url}/web/image/res.company/{company.id}/logo"
         company_website = company.website or "#"
         company_phone = company.phone or "N/A"
 
@@ -248,10 +252,12 @@ class OtpSignupHome(AuthSignupHome):
         qcontext = request.params.copy()
 
         email = data.get("login")
-        name = str(qcontext.get('name'))
+        name = data.get("name", "User")
 
-        _logger.info(f"Resend OTP request for: {email}")
-        _logger.info(f"Resend OTP raw kw: {kw}, qcontext: {request.params}, {data}")
+
+
+        _logger.info(f"Resend OTP request for: {email} and name: {name}")
+        _logger.info(f"Resend OTP raw data: {data}")
 
 
         if not email:
