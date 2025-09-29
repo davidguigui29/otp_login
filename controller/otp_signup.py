@@ -274,4 +274,3 @@ class OtpSignupHome(AuthSignupHome):
         self._send_otp_email(email, name, otp_code=OTP)
 
         return {"status": "success", "message": "OTP resent successfully"}
-
