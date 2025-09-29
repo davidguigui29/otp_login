@@ -10,6 +10,85 @@ _logger = logging.getLogger(__name__)
 
 
 class OtpLoginHome(Home):
+
+    def _build_otp_email(self, email, name, otp_code):
+        """Return subject, body_html for Login OTP email."""
+        company = request.env.company
+        email_from = company.email or "noreply@example.com"
+        company_name = company.name or "Your Company"
+        company_logo = f"/web/image/res.company/{company.id}/logo" if company.logo else ""
+        company_website = company.website or "#"
+        company_phone = company.phone or "N/A"
+
+        subject = _(f"[{company_name}] Verify Your Login - OTP Required")
+
+        body_html = f"""
+        <html>
+        <body style="margin:0; padding:0; background-color:#f9f9f9; font-family:Arial, sans-serif; color:#333;">
+            <table align="center" width="600" cellpadding="0" cellspacing="0" 
+                style="margin:20px auto; background:#ffffff; border-radius:10px; overflow:hidden; box-shadow:0 2px 8px rgba(0,0,0,0.08);">
+
+                <!-- Header -->
+                <tr style="background-color:#004080; color:#ffffff;">
+                    <td style="padding:20px; text-align:center;">
+                        {f"<img src='{company_logo}' alt='{company_name}' height='50' style='margin-bottom:10px;'>" if company_logo else ""}
+                        <span style="font-size:20px; font-weight:bold; letter-spacing:1px;">{company_name}</span>
+                    </td>
+                </tr>
+
+                <!-- Body -->
+                <tr>
+                    <td style="padding:30px; font-size:15px; line-height:1.7; color:#444;">
+                        <p>Dear <b>{name}</b>,</p>
+                        <p>
+                            To complete your login to <b>{company_name}</b>, please confirm your identity using the OTP below.
+                        </p>
+
+                        <!-- OTP badge -->
+                        <p style="text-align:center; margin:20px 0;">
+                            <span style="font-size:22px; font-weight:bold; color:#004080; padding:12px 25px; 
+                                        border:2px dashed #004080; border-radius:6px; display:inline-block;">
+                                {otp_code}
+                            </span>
+                        </p>
+
+                        <p>
+                            ⚠️ This OTP will expire shortly. Please use it as soon as possible.<br>
+                            If you did not request to log in, kindly ignore this email.
+                        </p>
+
+                        <p style="margin-top:30px;">Best regards,<br><b>{company_name} Security Team</b></p>
+                    </td>
+                </tr>
+
+                <!-- Footer -->
+                <tr style="background-color:#f1f1f1; font-size:12px; color:#777;">
+                    <td style="padding:15px; text-align:center;">
+                        <p>
+                            {company_name} | {company_phone} | 
+                            <a href="{company_website}" style="color:#004080; text-decoration:none;">{company_website}</a>
+                        </p>
+                        <p>&copy; {company_name} - All Rights Reserved</p>
+                    </td>
+                </tr>
+            </table>
+        </body>
+        </html>
+        """
+        return subject, email_from, body_html
+
+    def _send_otp_email(self, email, name, otp_code):
+        """Build and send OTP email for login verification."""
+        subject, email_from, body_html = self._build_otp_email(email, name, otp_code)
+        mail = request.env['mail.mail'].sudo().create({
+            'subject': subject,
+            'email_from': email_from,
+            'email_to': email,
+            'body_html': body_html,
+        })
+        mail.send()
+        return mail
+
     
     @http.route(website=True)
     def web_login(self, redirect=None, **kw):
@@ -53,78 +132,9 @@ class OtpLoginHome(Home):
                 'otp': OTP,
                 'email': email
             }
-            company = user_id.company_id or request.env.company
-            company_name = company.name or "Your Company"
-            company_email = company.email or "noreply@example.com"
-            company_phone = company.phone or "N/A"
-            company_website = company.website or "#"
-
-            # Get logo (if available) -> use base64 image fallback
-            company_logo = ""
-            if company.logo:
-                base_url = request.env["ir.config_parameter"].sudo().get_param("web.base.url")
-                company_logo = f"{base_url}/web/image/res.company/{company.id}/logo"
-
-            mail_body = f"""
-            <html>
-            <body style="font-family: Arial, sans-serif; color:#333; background-color:#f4f6f8; padding:20px; margin:0;">
-                <table align="center" width="600" cellpadding="0" cellspacing="0" 
-                    style="background:#ffffff; border-radius:8px; overflow:hidden; box-shadow:0 3px 6px rgba(0,0,0,0.1);">
-                
-                <!-- Header -->
-                <tr style="background-color:#004080; color:#ffffff;">
-                    <td style="padding:20px; text-align:center;">
-                    {"<img src='%s' alt='%s' height='50' style='margin-bottom:10px;'>" % (company_logo, company_name) if company_logo else ""}
-                    <div style="font-size:20px; font-weight:bold;">{company_name}</div>
-                    </td>
-                </tr>
-
-                <!-- Body -->
-                <tr>
-                    <td style="padding:30px; font-size:15px; line-height:1.6; color:#444;">
-                    <p>Dear <b>{user_id.name}</b>,</p>
-                    <p>
-                        To complete the verification process for your <b>{company_name}</b> account, 
-                        please use the following One-Time Password (OTP):
-                    </p>
-                    <p style="text-align:center; margin:30px 0;">
-                        <span style="font-size:22px; font-weight:bold; color:#004080; padding:12px 25px; 
-                                    border:2px dashed #004080; border-radius:6px; display:inline-block;">
-                        {OTP}
-                        </span>
-                    </p>
-                    <p>
-                        ⚠️ This OTP will expire shortly, so please use it as soon as possible.<br>
-                        If you did not request this code, kindly ignore this email.
-                    </p>
-                    <p style="margin-top:30px;">Thanks & Regards,<br><b>{company_name} Team</b></p>
-                    </td>
-                </tr>
-
-                <!-- Footer -->
-                <tr style="background-color:#f9f9f9; font-size:12px; color:#777;">
-                    <td style="padding:20px; text-align:center;">
-                    <p style="margin:5px 0;">
-                        {company_name} | {company_phone} | 
-                        <a href="{company_website}" style="color:#004080; text-decoration:none;">{company_website}</a>
-                    </p>
-                    <p style="margin:5px 0;">&copy; {company_name} - All Rights Reserved</p>
-                    </td>
-                </tr>
-                </table>
-            </body>
-            </html>
-            """
-
-
-            mail = request.env['mail.mail'].sudo().create({
-                'subject': _(f'[{company_name}] Verify Your Account - OTP Required'),
-                'email_from': company_email,
-                'author_id': user_id.partner_id.id,
-                'email_to': email,
-                'body_html': mail_body,
-            })
-            mail.send()
+            
+            # Send mail
+            self._send_otp_email(email, user_id.name, OTP)
 
             # Save OTP in your verification model
             request.env['otp.verification'].sudo().create(vals)
@@ -210,8 +220,8 @@ class OtpLoginHome(Home):
             "email": email
         })
 
-        # Send mail again (same as login route)
-        # TODO: copy your email sending logic here
+        # Send mail
+        self._send_otp_email(email, user_id.name, OTP)
 
         return {"status": "success", "message": "OTP resent successfully"}
 
