@@ -136,10 +136,10 @@ class OtpSignupHome(AuthSignupHome):
     @http.route('/web/signup/otp', type='http', auth='public', website=True, sitemap=False)
     def web_signup_otp(self, **kw):
         qcontext = request.params.copy()
-        _logger.info("Signup step 1 - raw params: %s", qcontext)
+        # _logger.info("Signup step 1 - raw params: %s", qcontext)
 
         # qcontext = self._ensure_name_in_qcontext(qcontext)
-        _logger.info("Signup step 1 - processed qcontext: %s", qcontext)
+        # _logger.info("Signup step 1 - processed qcontext: %s", qcontext)
 
 
         # Validate passwords
@@ -181,7 +181,7 @@ class OtpSignupHome(AuthSignupHome):
             'email': email,
         })
 
-        _logger.info("OTP %s sent to email %s", otp_code, email)
+        # _logger.info("OTP %s sent to email %s", otp_code, email)
 
         # Render OTP entry form
         return request.render('otp_login.custom_otp_signup', {
@@ -202,7 +202,7 @@ class OtpSignupHome(AuthSignupHome):
         qcontext = request.params.copy()
         # qcontext = self._ensure_name_in_qcontext(qcontext)
 
-        _logger.info("Signup step 2 - verify route qcontext: %s", qcontext)
+        # _logger.info("Signup step 2 - verify route qcontext: %s", qcontext)
 
         email = str(qcontext.get('login'))
         otp_input = str(qcontext.get('otp'))
@@ -220,8 +220,8 @@ class OtpSignupHome(AuthSignupHome):
             else:
                 if res_id:
                     res_id.state = 'rejected'
-                _logger.warning("OTP verification failed for email %s. Entered: %s, Expected: %s",
-                                email, otp_input, otp_stored)
+                # _logger.warning("OTP verification failed for email %s. Entered: %s, Expected: %s",
+                #                 email, otp_input, otp_stored)
                 return request.render('otp_login.custom_otp_signup', {
                     'otp': True,
                     'otp_login': True,
@@ -256,8 +256,8 @@ class OtpSignupHome(AuthSignupHome):
 
 
 
-        _logger.info(f"Resend OTP request for: {email} and name: {name}")
-        _logger.info(f"Resend OTP raw data: {data}")
+        # _logger.info(f"Resend OTP request for: {email} and name: {name}")
+        # _logger.info(f"Resend OTP raw data: {data}")
 
 
         if not email:

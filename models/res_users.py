@@ -34,7 +34,7 @@ class ResUsers(models.Model):
 
     @classmethod
     def _login(cls, db, credential, user_agent_env):
-        print(credential)
+        # print(credential)
         if not credential['password']:
             raise AccessDenied()
         ip = request.httprequest.environ['REMOTE_ADDR'] if request else 'n/a'
@@ -63,10 +63,10 @@ class ResUsers(models.Model):
                     user._update_last_login()
 
         except AccessDenied:
-            _logger.info("Login failed for db:%s login:%s from %s", db, credential['login'], ip)
+            # _logger.info("Login failed for db:%s login:%s from %s", db, credential['login'], ip)
             raise
 
-        _logger.info("Login successful for db:%s login:%s from %s", db, credential['login'], ip)
+        # _logger.info("Login successful for db:%s login:%s from %s", db, credential['login'], ip)
         # res = {'uid': user.id}
         return {'uid': user.id}
 

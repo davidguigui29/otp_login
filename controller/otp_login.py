@@ -130,7 +130,7 @@ class OtpLoginHome(Home):
 
         if user_id:
             OTP = self.generate_otp(4)
-            _logger.info(f"Generated OTP for {email}: {OTP}")
+            # _logger.info(f"Generated OTP for {email}: {OTP}")
 
             
 
@@ -204,8 +204,8 @@ class OtpLoginHome(Home):
     def web_otp_resend(self, **kw):
         data = request.get_json_data()
         email = data.get("login")
-        _logger.info(f"Resend OTP request for: {email}")
-        _logger.info(f"Resend OTP raw kw: {kw}, qcontext: {request.params}, {data}")
+        # _logger.info(f"Resend OTP request for: {email}")
+        # _logger.info(f"Resend OTP raw kw: {kw}, qcontext: {request.params}, {data}")
 
 
         if not email:
@@ -218,7 +218,7 @@ class OtpLoginHome(Home):
 
         # Generate OTP
         OTP = self.generate_otp(4)
-        _logger.info(f"Resent OTP for {email}: {OTP}")
+        # _logger.info(f"Resent OTP for {email}: {OTP}")
 
         # Save OTP
         request.env['otp.verification'].sudo().create({
