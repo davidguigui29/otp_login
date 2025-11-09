@@ -241,7 +241,7 @@ def otp_login_html(company_logo, company_name, name, otp_code, company_phone, co
 
             <div class="footer">
                 <p>
-                    {company_name} | {company_phone} |
+                    {company_name}
                     <a href="{company_website}">{company_website}</a>
                 </p>
                 <p>&copy; {company_name} - All Rights Reserved</p>
@@ -296,7 +296,7 @@ def otp_signup_html(company_logo, company_name, name, otp_code, company_phone, c
 
             <div class="footer">
                 <p>
-                    {company_name} | {company_phone} |
+                    {company_name}
                     <a href="{company_website}">{company_website}</a>
                 </p>
                 <p>&copy; {company_name} - All Rights Reserved</p>
