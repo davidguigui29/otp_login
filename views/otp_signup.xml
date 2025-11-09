@@ -2,9 +2,9 @@
 <odoo>
     <data>
         <template inherit_id="auth_signup.signup" id="custom_otp_signup">
-            <xpath expr="//form[@class='oe_signup_form']" position="replace">
+            <xpath expr="//form[hasclass('oe_signup_form')]" position="replace">
 
-                <!-- Step 1: Signup -->
+
                 <form class="oe_signup_form" role="form" t-attf-action="/web/signup/otp"
                     method="post" t-if="not otp and not otp_no and not message">
 
@@ -17,11 +17,17 @@
                     </div>
 
                     <div class="mb-3 field-name">
-                        <label for="name" class="form-label">Name</label>
-                        <input type="text" name="name" id="name" class="form-control" placeholder="John Doe" required="required"/>
+                        <label for="name" class="form-label">Full Name</label>
+                        <input type="text"
+                            name="name" t-att-value="name" id="name"
+                            class="form-control form-control-sm"
+                            placeholder="John Doe" required="required"
+                            t-att-readonly="'readonly' if only_passwords else None"
+                            t-att-autofocus="'autofocus' if login and not only_passwords else None" />
                     </div>
 
-                    <div class="mb-3">
+
+                    <div class="mb-3 field-password pt-2">
                         <label for="password">Password</label>
                         <input type="password" name="password" id="password"
                             class="form-control" required="required"
@@ -45,14 +51,18 @@
                         <t t-out="error" />
                     </p>
 
-                    <div class="text-center pt-3">
+                    <div class="text-center oe_login_buttons d-grid pt-3">
                         <button style="width:100%" type="submit" class="btn btn-primary">
                             Send OTP
                         </button>
+                        <a t-attf-href="/web/login?{{ keep_query() }}" class="btn btn-link btn-sm"
+                            role="button">Already have an account?</a>
+                        <div class="o_login_auth" />
+
                     </div>
                 </form>
 
-                <!-- Step 2: Verify OTP -->
+
                 <form t-if="otp" id="form_signup_otp" class="oe_login_form" role="form"
                     t-attf-action="/web/signup/otp/verify" method="post">
 
@@ -63,7 +73,7 @@
                         <input type="text" name="otp" id="otp" class="form-control"
                             required="required" />
 
-                        <!-- hidden user fields -->
+
                         <input type="hidden" name="login" t-att-value="login" />
                         <input type="hidden" name="name" id="name" t-att-value="name" />
                         <input type="hidden" name="password" t-att-value="password" />
@@ -81,18 +91,20 @@
 
                     <div class="text-center mt-2">
                         <button id="resend_signup_otp_btn" type="button" class="btn btn-link">
-                            Resend OTP (<span id="signup_countdown">0</span>s)
-                        </button>
+                            Resend OTP (<span id="signup_countdown">0</span>s) </button>
                     </div>
 
-                    <div class="text-center pt-3">
-                        <button style="width:100%" type="submit" class="btn btn-primary">Sign Up</button>
+                    <div class="text-center oe_login_buttons d-grid pt-3">
+                        <button type="submit" class="btn btn-primary"> Sign up</button>
+                        <a t-attf-href="/web/login?{{ keep_query() }}" class="btn btn-link btn-sm"
+                            role="button">Already have an account?</a>
+                        <div class="o_login_auth" />
                     </div>
                 </form>
 
 
-
             </xpath>
         </template>
+
     </data>
 </odoo>

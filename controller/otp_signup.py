@@ -9,6 +9,10 @@ from odoo import http, _
 from odoo.http import request
 from odoo.addons.auth_signup.controllers.main import AuthSignupHome
 from odoo.exceptions import UserError
+from odoo.addons.auth_oauth.controllers.main import OAuthLogin
+from odoo.addons.otp_login.utils.email_templates import otp_signup_html
+
+
 
 _logger = logging.getLogger(__name__)
 
@@ -16,9 +20,12 @@ _logger = logging.getLogger(__name__)
 class OtpSignupHome(AuthSignupHome):
     """Custom Signup Controller with OTP verification."""
 
+
+    
     # --------------------------------------------------
     # Utility helpers
     # --------------------------------------------------
+
 
     def _build_otp_email(self, email, name, otp_code):
         """Return subject, body_html for OTP email."""
@@ -26,68 +33,16 @@ class OtpSignupHome(AuthSignupHome):
         email_from = company.email or "noreply@example.com"
         company_name = company.name or "Your Company"
         # company_logo = f"/web/image/res.company/{company.id}/logo" if company.logo else ""
+        base_url = request.env["ir.config_parameter"].sudo().get_param("web.base.url")
         company_logo = ""
         if company.logo:
-            base_url = request.env["ir.config_parameter"].sudo().get_param("web.base.url")
             company_logo = f"{base_url}/web/image/res.company/{company.id}/logo"
         company_website = company.website or "#"
         company_phone = company.phone or "N/A"
 
         subject = _(f"[{company_name}] Verify Your Account - OTP Required")
 
-        body_html = f"""
-        <html>
-        <body style="margin:0; padding:0; background-color:#f9f9f9; font-family:Arial, sans-serif; color:#333;">
-            <table align="center" width="600" cellpadding="0" cellspacing="0" 
-                style="margin:20px auto; background:#ffffff; border-radius:10px; overflow:hidden; box-shadow:0 2px 8px rgba(0,0,0,0.08);">
-
-                <!-- Header -->
-                <tr style="background-color:#004080; color:#ffffff;">
-                    <td style="padding:20px; text-align:center;">
-                        {f"<img src='{company_logo}' alt='{company_name}' height='50' style='margin-bottom:10px;'>" if company_logo else ""}
-                        <span style="font-size:20px; font-weight:bold; letter-spacing:1px;">{company_name}</span>
-                    </td>
-                </tr>
-
-                <!-- Body -->
-                <tr>
-                    <td style="padding:30px; font-size:15px; line-height:1.7; color:#444;">
-                        <p>Dear <b>{name}</b>,</p>
-                        <p>
-                            Welcome to <b>{company_name}</b>! To complete your signup process, please confirm your account using the OTP below.
-                        </p>
-
-                        <!-- OTP badge -->
-                        <p style="text-align:center; margin:20px 0;">
-                            <span style="font-size:22px; font-weight:bold; color:#004080; padding:12px 25px; 
-                                        border:2px dashed #004080; border-radius:6px; display:inline-block;">
-                                {otp_code}
-                            </span>
-                        </p>
-
-                        <p>
-                            ⚠️ This OTP will expire shortly. Please use it as soon as possible.<br>
-                            If you did not create an account with us, kindly ignore this email.
-                        </p>
-
-                        <p style="margin-top:30px;">Warm regards,<br><b>{company_name} Team</b></p>
-                    </td>
-                </tr>
-
-                <!-- Footer -->
-                <tr style="background-color:#f1f1f1; font-size:12px; color:#777;">
-                    <td style="padding:15px; text-align:center;">
-                        <p>
-                            {company_name} | {company_phone} | 
-                            <a href="{company_website}" style="color:#004080; text-decoration:none;">{company_website}</a>
-                        </p>
-                        <p>&copy; {company_name} - All Rights Reserved</p>
-                    </td>
-                </tr>
-            </table>
-        </body>
-        </html>
-        """
+        body_html = otp_signup_html(company_logo=company_logo, company_name=company_name, name=name, otp_code=otp_code, company_phone=company_phone, company_website=company_website, view_look="neogreen")
         return subject, email_from, body_html
 
     def _send_otp_email(self, email, name, otp_code):
@@ -129,6 +84,16 @@ class OtpSignupHome(AuthSignupHome):
         return otp
 
 
+    def _get_oauth_providers(self):
+        """Get real OAuth providers to show on signup page."""
+        try:
+            return OAuthLogin().list_providers()
+        except Exception as e:
+            _logger.warning("Failed to load OAuth providers: %s", e)
+            return []
+
+
+
 
     # --------------------------------------------------
     # OTP Step 1: Initial signup (send OTP)
@@ -136,13 +101,10 @@ class OtpSignupHome(AuthSignupHome):
     @http.route('/web/signup/otp', type='http', auth='public', website=True, sitemap=False)
     def web_signup_otp(self, **kw):
         qcontext = request.params.copy()
-        # _logger.info("Signup step 1 - raw params: %s", qcontext)
 
-        # qcontext = self._ensure_name_in_qcontext(qcontext)
-        # _logger.info("Signup step 1 - processed qcontext: %s", qcontext)
+        # Include OAuth providers
+        qcontext['providers'] = self._get_oauth_providers()
 
-
-        # Validate passwords
         password = qcontext.get("password")
         confirm_password = qcontext.get("confirm_password")
 
@@ -150,7 +112,6 @@ class OtpSignupHome(AuthSignupHome):
             qcontext["error"] = _("Passwords do not match, please retype them.")
             return request.render('otp_login.custom_otp_signup', qcontext)
 
-        # Check password complexity
         if not self._is_valid_password(password):
             qcontext["error"] = _(
                 "Password must be 8–20 characters long and include at least: "
@@ -158,40 +119,30 @@ class OtpSignupHome(AuthSignupHome):
             )
             return request.render('otp_login.custom_otp_signup', qcontext)
 
-        # Check if user already exists
         if request.env["res.users"].sudo().search([("login", "=", qcontext.get("login"))]):
             qcontext["error"] = _("Another user is already registered using this email address.")
             return request.render('otp_login.custom_otp_signup', qcontext)
 
-        # Generate OTP
         otp_code = self.generate_otp(4)
         email = str(qcontext.get('login'))
         name = str(qcontext.get('name'))
 
         self._send_otp_email(email, name, otp_code)
 
-        # # Confirmation link (optional, can include OTP or a token)
-        # # confirmation_link = request.httprequest.host_url + f"/web/signup/confirm?email={email}&otp={otp_code}"
-        # # _logger.info("Confirmation link %s sent to email %s", confirmation_link, email)
-
-
-        # Save OTP in custom model
         request.env['otp.verification'].sudo().create({
             'otp': otp_code,
             'email': email,
         })
 
-        # _logger.info("OTP %s sent to email %s", otp_code, email)
-
-        # Render OTP entry form
         return request.render('otp_login.custom_otp_signup', {
             'otp': True,
             'otp_login': True,
-            'login': qcontext["login"],
+            'login': email,
             'otp_no': otp_code,
             'name': name,
-            'password': qcontext["password"],
-            'confirm_password': qcontext["confirm_password"],
+            'password': password,
+            'confirm_password': confirm_password,
+            'providers': self._get_oauth_providers(),  # include real OAuth
         })
 
     # --------------------------------------------------
@@ -200,16 +151,16 @@ class OtpSignupHome(AuthSignupHome):
     @http.route('/web/signup/otp/verify', type='http', auth='public', website=True, sitemap=False)
     def web_otp_signup_verify(self, *args, **kw):
         qcontext = request.params.copy()
-        # qcontext = self._ensure_name_in_qcontext(qcontext)
-
-        # _logger.info("Signup step 2 - verify route qcontext: %s", qcontext)
+        qcontext['providers'] = self._get_oauth_providers()
 
         email = str(qcontext.get('login'))
         otp_input = str(qcontext.get('otp'))
         password = qcontext.get('password')
         confirm_password = qcontext.get('confirm_password')
 
-        res_id = request.env['otp.verification'].search([('email', '=', email)], order="create_date desc", limit=1)
+        res_id = request.env['otp.verification'].sudo().search(
+            [('email', '=', email)], order="create_date desc", limit=1
+        )
         otp_stored = res_id.otp if res_id else None
 
         try:
@@ -220,30 +171,24 @@ class OtpSignupHome(AuthSignupHome):
             else:
                 if res_id:
                     res_id.state = 'rejected'
-                # _logger.warning("OTP verification failed for email %s. Entered: %s, Expected: %s",
-                #                 email, otp_input, otp_stored)
                 return request.render('otp_login.custom_otp_signup', {
                     'otp': True,
                     'otp_login': True,
                     'login': email,
-                    'name': qcontext["name"],
+                    'name': qcontext.get("name"),
                     'password': password,
                     'confirm_password': confirm_password,
                     'otp_error': True,
+                    'providers': self._get_oauth_providers(),
                 })
 
         except UserError as e:
             qcontext['error'] = e.name or e.value
             _logger.error("UserError during OTP verification: %s", e)
 
-        return request.render('otp_login.custom_otp_signup', {
-            'otp': True,
-            'otp_login': True,
-            'login': email,
-            'name': qcontext.get("name"),
-            'password': password,
-            'confirm_password': confirm_password,
-        })
+        return request.render('otp_login.custom_otp_signup', qcontext)
+
+
 
 
     @http.route('/web/signup/otp/resend', type='json', auth='public', website=True, csrf=False)
@@ -268,6 +213,7 @@ class OtpSignupHome(AuthSignupHome):
 
         # Generate OTP
         OTP = self.generate_otp(4)
+        print(f"Here is your otp: {OTP}")
         _logger.info(f"Resent OTP for {email}: {OTP}")
 
         # Save OTP
@@ -280,3 +226,4 @@ class OtpSignupHome(AuthSignupHome):
         self._send_otp_email(email, name, otp_code=OTP)
 
         return {"status": "success", "message": "OTP resent successfully"}
+
