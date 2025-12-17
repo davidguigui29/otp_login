@@ -50,7 +50,13 @@
                     <p class="alert alert-danger" t-if="error">
                         <t t-out="error" />
                     </p>
-
+                    <!-- <div>
+                        <p>lsldldldldl</p>
+                        <p>lsldldldldl</p>
+                        <p>lsldldldldl</p>
+                        <p>lsldldldldl</p>
+                        <p>lsldldldldl</p>
+                    </div> -->
                     <div class="text-center oe_login_buttons d-grid pt-3">
                         <button style="width:100%" type="submit" class="btn btn-primary">
                             Send OTP
@@ -93,6 +99,22 @@
                         <button id="resend_signup_otp_btn" type="button" class="btn btn-link">
                             Resend OTP (<span id="signup_countdown">0</span>s) </button>
                     </div>
+
+                    <div class="form-check mb-3">
+                        <input type="checkbox" class="form-check-input" id="terms_conditions"
+                            name="terms_conditions" required="required" />
+                        <label class="form-check-label" for="terms_conditions"> I agree to the <a
+                                href="https://myfansbook.com/about-us/terms-of-service"
+                                target="_blank">Terms of Service</a> and <a
+                                href="https://myfansbook.com/about-us/privacy" target="_blank">Privacy
+                            Policy</a>
+                        </label>
+                    </div>
+
+
+                    <input type="hidden" name="terms_conditions"
+                        t-att-value="terms_conditions or ''" />
+
 
                     <div class="text-center oe_login_buttons d-grid pt-3">
                         <button type="submit" class="btn btn-primary"> Sign up</button>

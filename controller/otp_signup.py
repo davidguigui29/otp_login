@@ -164,10 +164,20 @@ class OtpSignupHome(AuthSignupHome):
         otp_stored = res_id.otp if res_id else None
 
         try:
+
             if otp_stored and otp_input == otp_stored:
                 res_id.state = 'verified'
                 _logger.info("OTP verified successfully for email %s", email)
+
+                # 🔥 Save Terms Acceptance
+                kw["terms_accepted"] = True if qcontext.get("terms_conditions") else False
+
                 return self.web_auth_signup(*args, **kw)
+
+            # if otp_stored and otp_input == otp_stored:
+            #     res_id.state = 'verified'
+            #     _logger.info("OTP verified successfully for email %s", email)
+            #     return self.web_auth_signup(*args, **kw)
             else:
                 if res_id:
                     res_id.state = 'rejected'

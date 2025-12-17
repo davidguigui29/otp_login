@@ -30,6 +30,14 @@ def _check_password_strength(password):
 class ResUsers(models.Model):
     _inherit = "res.users"
 
+
+
+    terms_accepted = fields.Boolean(
+        string="Terms & Conditions Accepted",
+        default=False,
+        help="Indicates whether the user accepted the Terms and Conditions during signup."
+    )
+
     # -------------------------------------------------------------------------
     # LOGIN OVERRIDE
     # -------------------------------------------------------------------------

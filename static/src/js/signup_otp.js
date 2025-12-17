@@ -85,6 +85,26 @@ whenReady(() => {
     // --- First load handler ---
     const otpForm = document.querySelector("#form_signup_otp");
     if (otpForm) {
+        const termsCheckbox = otpForm.querySelector("#terms_conditions");
+        const submitBtn = otpForm.querySelector("button[type='submit']");
+
+        if (termsCheckbox && submitBtn) {
+            // Initial state
+            submitBtn.disabled = true;
+
+            termsCheckbox.addEventListener("change", function () {
+                submitBtn.disabled = !this.checked;
+            });
+
+            // Safety: block form submit if not checked
+            otpForm.addEventListener("submit", function (ev) {
+                if (!termsCheckbox.checked) {
+                    ev.preventDefault();
+                    alert("You must agree to the Terms of Service and Privacy Policy.");
+                    submitBtn.disabled = true;
+                }
+            });
+        }
         if (!localStorage.getItem(COUNTDOWN_KEY)) {
             const expiry = Date.now() + 30 * 1000;
             localStorage.setItem(COUNTDOWN_KEY, expiry);
