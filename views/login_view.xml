@@ -1,5 +1,6 @@
 <odoo>
 
+
     <template id="custom_login_otp_checkbox_template" inherit_id="web.login">
         <xpath expr="//input[@name='password']" position="after">
             <div class="o_login_otp_container">
@@ -24,14 +25,25 @@
             <form t-if="otp_login and not otp" id="form_otp_login" class="oe_login_form" role="form"
                 t-attf-action="/web/otp/login" method="post">
                 <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()" />
-                <div class="form-group field-login">
+                <!-- <div class="form-group field-login">
                     <label t-attf-style="margin-bottom:10px" for="login">Email</label>
                     <input type="text" placeholder="Email" name="login" t-att-value="login"
                         id="login"
                         t-attf-class="form-control #{'form-control-sm' if form_small else ''}"
                         required="required"
                         autofocus="autofocus" autocapitalize="off" />
-                </div>
+                </div> -->
+                <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()" />
+                    <div class="form-group field-login">
+                        <label t-attf-style="margin-bottom:10px" for="login">
+                            <t t-if="website and website.name == 'Myfansbook'">Email</t>
+                            <t t-else="">Email</t>
+                        </label>
+                        <input type="text" name="login" t-att-value="login" id="login"
+                            t-att-placeholder="'e.g. david@gmail.com'  if website and website.name == 'Myfansbook' else 'Email'"
+                            t-attf-class="form-control #{'form-control-sm' if form_small else ''}"
+                            required="required" autofocus="autofocus" autocapitalize="off" />
+                    </div>
                 <label for="password" class="form-label d-flex justify-content-between d-none">
                     Password</label>
                 <input type="password" placeholder="Password" name="password" id="password"
@@ -80,6 +92,22 @@
                 </div>
             </form>
         </xpath>
+
+        <!-- Change the Email Label and the placeholder of its input -->
+        <xpath expr="//label[@for='login']" position="replace">
+            <label for="login" class="col-form-label">
+                <t t-if="website and website.name == 'Myfansbook'">Email / Username / Phone</t>
+                <t t-else="">Email</t>
+            </label>
+        </xpath>
+
+        <xpath expr="//input[@name='login']" position="attributes">
+            <attribute name="t-att-placeholder">
+                'e.g. david@gmail.com or +123456789' if website and website.name == 'Myfansbook' else 'Email'
+            </attribute>
+        </xpath>
+        
+       
     </template>
 
 </odoo>
